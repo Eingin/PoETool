@@ -30,13 +30,13 @@ class Bundle:
             cprint("chunkSize={}".format(colored(bundle.header.chunkSize, "green")))
 
     @command
-    @argument("path", type=str, description="Bundle file path", positional=True)
+    @argument("inPath", type=str, description="Bundle file path", positional=True)
     @argument("outPath", type=str, description="Output path for decompressed data")
-    def decompress(self, path, outPath: str = ""):
+    def decompress(self, inPath, outPath: str = ""):
         """
         Attempts to decompresses the open bundle file and optionally saves the reuslting data into a file
         """
-        with open(path, "rb") as reader: 
+        with open(inPath, "rb") as reader: 
             bundle = GGGBundle(reader)
 
             cprint("Starting decompression...", "cyan")
