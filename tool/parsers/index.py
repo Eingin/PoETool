@@ -1,6 +1,5 @@
 from ..utils.oodle import OodleCompressionType
 import struct
-import ctypes
 
 class IndexBundleInfo:
      def __init__(self, reader):
