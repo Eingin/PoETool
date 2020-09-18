@@ -3,7 +3,6 @@ import struct
 import ctypes
 
 
-
 class BundleHeader:
      def __init__(self, reader):
         parsed = struct.unpack("IIQQIIIIII", reader.read(48))

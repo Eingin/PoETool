@@ -6,11 +6,40 @@ import sys
 import struct
 from io import IOBase
 
+from ...utils.fnv import fnv64a
 from ...parsers.bundle import GGGBundle
+from ...parsers.index import BundleIndex
 
 @command
 class Bundle:
     "Command for handling bundle files"
+
+    @command
+    @argument("path", type=str, description="Index path", positional=True)
+    @argument("file", type=str, description="File to lookup")
+    def index(self, path: str, file: str = None):
+        """
+        Loads a decompressed bundle index
+        """
+        with open(path, "rb") as reader: 
+            index = BundleIndex(reader)
+            cprint("bundleCount={}".format(colored(index.bundleCount, "green")))
+            cprint("fileCount={}".format(colored(index.fileCount, "green")))
+            cprint("pathCount={}".format(colored(index.pathCount, "green")))
+            if(file != None):
+                fileHash = fnv64a(file.lower() + "++")
+                cprint("file hash={}".format(colored(hex(fileHash), "red")))
+                fileInfo = index.files.get(fileHash)
+                if(fileInfo != None):
+                    cprint("Found file!")
+                    bundleInfo = index.bundles[fileInfo.bundleIndex]
+                    cprint("bundle={}".format(colored(bundleInfo.name, "green")))
+                    cprint("section={} - {}".format(
+                        colored(hex(fileInfo.fileOffset), "green"),
+                        colored(hex(fileInfo.fileOffset + fileInfo.fileSize), "green")
+                    ))
+                else:
+                    cprint("Unable to find file :(")
 
     @command
     @argument("path", type=str, description="Bundle file path", positional=True)
