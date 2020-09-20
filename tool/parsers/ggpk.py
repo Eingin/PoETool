@@ -1,6 +1,7 @@
-from anytree import Node, RenderTree
+from anytree import Node, RenderTree, Resolver
 from termcolor import cprint, colored
 import struct
+import mmap
 
 class Entry:
     def __init__(self, reader):
@@ -15,12 +16,15 @@ class GGPKEntry:
 
 
 class FileEntry:
-        def __init__(self, entry: Entry, reader):
-            self.entry = entry
-            self.nameLength, = struct.unpack("I", reader.read(4))
-            self.signature = struct.unpack("32B", reader.read(32))
-            self.name = reader.read(self.nameLength * 2).decode('utf-16').rstrip('\x00')
-            self.dataOffset = reader.tell()
+    def __init__(self, entry: Entry, reader):
+        self.entry = entry
+        self.nameLength, = struct.unpack("I", reader.read(4))
+        self.signature = struct.unpack("32B", reader.read(32))
+        self.name = reader.read(self.nameLength * 2).decode('utf-16').rstrip('\x00')
+        self.dataOffset = reader.tell()
+
+    def openFile(self, ggpkFile):
+         return mmap.mmap(ggpkFile.fileno(), length=self.entry.recordLength - stuff, offset=self.dataOffset, access=mmap.ACCESS_READ)
 
 class ChildEntry:
     def __init__(self, reader):
@@ -67,14 +71,16 @@ class GGPK:
             
     def indexEntry(self, entry, parentNode: Node, reader):
         if type(entry) is PDirEntry:
-            node = Node(entry.name, parent=parentNode)
+            node = Node(entry.name, parent=parentNode, type="PDIR", entry=entry)
             for child in entry.children:
                 reader.seek(child.offset)
                 childEntry = parseEntry(Entry(reader), reader)
                 self.indexEntry(childEntry, node, reader)
             return node
         elif type(entry) is FileEntry:
-            node = Node(entry.name, parent=parentNode)
+            node = Node(entry.name, parent=parentNode, type="FILE", entry=entry)
             return node
 
-
+    def getNode(self, path):
+        resolver = Resolver("name")
+        return resolver.get(self.tree, "/GGPK" + path)
