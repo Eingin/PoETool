@@ -3,6 +3,7 @@ import argparse
 from nubia import Nubia, PluginInterface, Options
 
 import tool.cli.commands
+from tool.cli.statusbar import PoEToolStatusBar
 
 class POECLI(Nubia):
     def _parse_args(self, cli_args=sys.argv):
@@ -21,6 +22,8 @@ class POEToolPlugin(PluginInterface):
         )
         return opts_parser
 
+    def get_status_bar(self, context):
+        return PoEToolStatusBar(context)
 
 def main():
     shell = POECLI(

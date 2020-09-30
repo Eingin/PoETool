@@ -1,4 +1,4 @@
-from anytree import Node, RenderTree, Resolver
+from anytree import Node, RenderTree, Resolver, ResolverError
 from termcolor import cprint, colored
 import struct
 import mmap
@@ -22,9 +22,21 @@ class FileEntry:
         self.signature = struct.unpack("32B", reader.read(32))
         self.name = reader.read(self.nameLength * 2).decode('utf-16').rstrip('\x00')
         self.dataOffset = reader.tell()
+        self.mappedFile = None
+
+    def __del__(self):
+        if self.mappedFile != None:
+            self.mappedFile.close()
 
     def openFile(self, ggpkFile):
-         return mmap.mmap(ggpkFile.fileno(), length=self.entry.recordLength - stuff, offset=self.dataOffset, access=mmap.ACCESS_READ)
+        headerSize = self.nameLength * 2 + 4 + 32
+        self.mappedFile = mmap.mmap(ggpkFile.fileno(), length=self.entry.recordLength - headerSize, offset=self.dataOffset, access=mmap.ACCESS_READ)
+        return self.mappedFile
+
+    def extract(self, outPath):
+         if self.mappedFile != None:
+            with open(outPath, "wb") as writer: 
+                writer.write(self.mappedFile)
 
 class ChildEntry:
     def __init__(self, reader):
@@ -58,8 +70,12 @@ class GGPK:
     def __init__(self, reader):
         self.root = GGPKEntry(Entry(reader), reader)
 
-    def render(self):
-        print(RenderTree(self.tree, maxlevel=2))
+    def render(self, path = ""):
+        try:
+            for pre, _, node in RenderTree(self.getNode(path), maxlevel=2):
+                print("%s%s" % (pre, node.name))
+        except ResolverError:
+            print("Invalid path")
         
     def index(self, reader):
         for rootOffset in self.root.offsets:

@@ -1,4 +1,4 @@
-from nubia import command, argument
+from nubia import command, argument, context
 from termcolor import cprint, colored
 import mmap
 
@@ -17,3 +17,17 @@ def loadGGPK(path: str, file: str = None):
             ggpk.index(mmapFile)
             cprint("Indexed!")
             ggpk.render()
+            ctx = context.get_context()
+            ctx.ggpk = ggpk
+
+@command
+@argument("path", type=str, description="Tree path")
+def renderGGPK(path: str = ""):
+    """
+    Renders the ggpk tree
+    """
+    ctx = context.get_context()
+    try:
+        ctx.ggpk.render(path)
+    except AttributeError:
+        cprint("No GGPK loaded!", "red")
